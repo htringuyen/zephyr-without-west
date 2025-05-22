@@ -1,0 +1,27 @@
+
+/ {
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button0 {
+			label = "User Button";
+			gpios = <&ioportd 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <11>; /* KEY_0 keycode */
+		};
+	};
+
+	aliases {
+		sw0 = &user_button;
+	};
+};
+
+&pinctrl {
+	user_button_default: user_button_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_GPIO, 3, 5)>;
+		};
+	};
+};
+
+&icu {
+	status = "okay";
+};
