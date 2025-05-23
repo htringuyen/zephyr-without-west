@@ -1,11 +1,14 @@
 #!/bin/bash
+
+#******************************* Build Zephyr application *******************************
+
 set -e
 
 ################################################################################
-# SETUP ZEPHYR DEPENDENCIES
+# SETUP ENVIROMENT AND ZEPHYR DEPENDENCIES
 ################################################################################
 
-# Check if ZEPHYRWW_HOME exists
+# Setup top level directories: ZEPHYRWW_HOME, ZEPHYRWW_SCRIPTS
 if [ -z "$ZEPHYRWW_HOME" ]; then
   ZEPHYRWW_HOME="${HOME}/.zephyrww"
 fi
@@ -15,68 +18,42 @@ if [ ! -d "$ZEPHYRWW_HOME" ]; then
   exit 1
 fi
 
-# export top level dir for use in scripts
-export ZEPHYRWW_HOME=$ZEPHYRWW_HOME
+ZEPHYRWW_SCRIPTS=$ZEPHYRWW_HOME/scripts
 
-# Check if first argument (board) is provided
-if [ $# -eq 0 ] || [ -z "$1" ]; then
-    echo "Error: Board name is required as first argument"
-    echo "Usage: $0 <board> [--zephyr-version=<version>]"
-    exit 1
-fi
+export ZEPHYRWW_HOME=$ZEPHYRWW_HOME # for used in python scripts
 
-BOARD="$1"
-ZEPHYR_VERSION=""
+# Activate Zephyrww's python virtual env
+source $ZEPHYRWW_HOME/.venv/bin/activate 
 
-# Parse remaining arguments
-shift
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --zephyr-version=*)
-            ZEPHYR_VERSION="${1#*=}"
-            shift
-            ;;
-        *)
-            echo "Error: Unknown argument '$1'"
-            echo "Usage: $0 <board> [--zephyr-version=<version>]"
-            exit 1
-            ;;
-    esac
-done
+# Parse arguments and export as env vars: BOARD, ZEPHYR_VERSION, BUILD_DIR, SOURCE_DIR
+source $ZEPHYRWW_SCRIPTS/parse_build_args.sh "$@"
 
-# Check if ZEPHYR_VERSION is not set or is empty
-if [ -z "$ZEPHYR_VERSION" ]; then
-    echo "ZEPHYR_VERSION is not set. Retrieving latest version..."
+# If ZEPHYR_VERSION is latest, then fetch its actuall value
+if [ "$ZEPHYR_VERSION" = "latest" ]; then
+    echo "ZEPHYR_VERSION is set to 'latest'. Retrieving latest version..."
     ZEPHYR_VERSION=$(python $ZEPHYRWW_HOME/scripts/get_latest_zephyr_version.py)
     if [ -z "$ZEPHYR_VERSION" ]; then
         echo "Failed to retrieve Zephyr version."
         exit 1
     fi
-    echo "Using Zephyr version: $ZEPHYR_VERSION"
+    echo "Using latest Zephyr version: $ZEPHYR_VERSION"
 fi
 
-# Proceed with build logic
-echo "Building for board: $BOARD"
-
-# Ensure the corresponding zephyr version is installed
-source $ZEPHYRWW_HOME/.venv/bin/activate
+# Ensure the zephyr installation for specified version exists
 python $ZEPHYRWW_HOME/scripts/ensure_zephyr_installation.py --zephyr-version=$ZEPHYR_VERSION
 
-
 ################################################################################
-# BUILD WITH THE ABOVE SETUP
+# BUILD APP WITH CMAKE
 ################################################################################
 
+# Export top level directory paths for Zephyr installation
 export ZEPHYR_BASE_DIR="${ZEPHYRWW_HOME}/${ZEPHYR_VERSION}"
-
-export ZEPHYR_SDK_INSTALL_DIR="${ZEPHYR_BASE_DIR}/zephyr-sdk"
-
 export ZEPHYR_DIR="${ZEPHYR_BASE_DIR}/zephyr"
-
+export ZEPHYR_SDK_DIR="${ZEPHYR_BASE_DIR}/zephyr-sdk"
 export ZEPHYR_MODULES_BASE="${ZEPHYR_BASE_DIR}/modules"
 export BOOTLOADER_BASE="${ZEPHYR_BASE_DIR}/bootloader"
 
-# Set all Zephyr modules paths
+# Set ZEPHYR_MODULES env var for use in cmake
 export ZEPHYR_MODULES_LIST=(
     "${ZEPHYR_MODULES_BASE}/lib/acpica"
     "${ZEPHYR_MODULES_BASE}/hal/cmsis"
@@ -134,7 +111,6 @@ export ZEPHYR_MODULES_LIST=(
     "${ZEPHYR_MODULES_BASE}/lib/zcbor"
 )
 
-# build the value for ZEPHYR_MODULES
 export ZEPHYR_MODULES_STRING=""
 for module in "${ZEPHYR_MODULES_LIST[@]}"; do
     if [ -z "$ZEPHYR_MODULES_STRING" ]; then
@@ -145,22 +121,6 @@ for module in "${ZEPHYR_MODULES_LIST[@]}"; do
 done
 export ZEPHYR_MODULES="$ZEPHYR_MODULES_STRING"
 
-echo "Environment variables set successfully!"
-echo "ZEPHYR_SDK_INSTALL_DIR: $ZEPHYR_SDK_INSTALL_DIR"
-echo "ZEPHYR_DIR: $ZEPHYR_DIR"
-echo "ZEPHYR_MODULES count: ${#ZEPHYR_MODULES_LIST[@]}"
-
-
-# Check if board name is provided
-# if [ -z "$1" ]; then
-#   echo "Usage: $0 <board_name>"
-#   exit 1
-# fi
-
-BOARD_FULL=$BOARD
-BOARD_DIR="${BOARD_FULL%%/*}"  # Extract part before the first '/'
-BUILD_DIR="builds/$BOARD_DIR"
-
 # Clean the build directory if it exists
 if [ -d "$BUILD_DIR" ]; then
   echo "Cleaning existing build directory: $BUILD_DIR"
@@ -169,8 +129,6 @@ fi
 
 # Run cmake configuration and build
 cmake -P "$ZEPHYR_DIR/share/zephyr-package/cmake/zephyr_export.cmake"
-
-#cmake -P "$ZEPHYR_SDK_INSTALL_DIR/cmake"
-
-cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DBOARD="$BOARD_FULL" .
+cmake -P "$ZEPHYR_SDK_DIR/cmake/zephyr_sdk_export.cmake"
+cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DZEPHYR_MODULES="$ZEPHYR_MODULES" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
 cmake --build "$BUILD_DIR"
