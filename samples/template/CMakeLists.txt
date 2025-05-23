@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
+# required to bootstrap Zephyr's build system
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_DIR})
 
 project(template-app)
