@@ -5,6 +5,17 @@
 set -e
 
 ################################################################################
+# CLEANUP CMAKE CACHE
+################################################################################
+if [ -d "$HOME/.cmake/packages/Zephyr" ]; then
+    rm -r "$HOME/.cmake/packages/Zephyr"
+fi
+
+if [ -d "$HOME/.cmake/packages/Zephyr-sdk" ]; then
+    rm -r "$HOME/.cmake/packages/Zephyr-sdk"
+fi
+
+################################################################################
 # SETUP ENVIROMENT AND ZEPHYR DEPENDENCIES
 ################################################################################
 
