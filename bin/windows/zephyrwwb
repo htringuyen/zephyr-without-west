@@ -1,0 +1,157 @@
+# PowerShell version of Zephyr build script
+# Enable strict error handling (equivalent to set -e)
+$ErrorActionPreference = "Stop"
+
+#******************************* Build Zephyr application *******************************
+
+################################################################################
+# CLEANUP CMAKE CACHE
+################################################################################
+
+# Get CMake cache directory for Windows
+$CMAKE_CACHE_DIR = Join-Path $env:USERPROFILE ".cmake"
+
+if (Test-Path (Join-Path $CMAKE_CACHE_DIR "packages\Zephyr")) {
+    Remove-Item -Recurse -Force (Join-Path $CMAKE_CACHE_DIR "packages\Zephyr")
+}
+
+if (Test-Path (Join-Path $CMAKE_CACHE_DIR "packages\Zephyr-sdk")) {
+    Remove-Item -Recurse -Force (Join-Path $CMAKE_CACHE_DIR "packages\Zephyr-sdk")
+}
+
+################################################################################
+# SETUP ENVIRONMENT AND ZEPHYR DEPENDENCIES
+################################################################################
+
+# Setup top level directories: ZEPHYRWW_HOME, ZEPHYRWW_SCRIPTS
+if ([string]::IsNullOrEmpty($env:ZEPHYRWW_HOME)) {
+    $ZEPHYRWW_HOME = Join-Path $env:USERPROFILE ".zephyrww"
+} else {
+    $ZEPHYRWW_HOME = $env:ZEPHYRWW_HOME
+}
+
+if (-not (Test-Path $ZEPHYRWW_HOME -PathType Container)) {
+    Write-Error "Invalid ZEPHYRWW_HOME: $ZEPHYRWW_HOME. Zephyrww may not be installed."
+    exit 1
+}
+
+$ZEPHYRWW_SCRIPTS = Join-Path $ZEPHYRWW_HOME "scripts"
+
+$env:ZEPHYRWW_HOME = $ZEPHYRWW_HOME # for use in python scripts
+
+# Activate Zephyrww's python virtual env (Windows version)
+$VENV_ACTIVATE = Join-Path $ZEPHYRWW_HOME ".venv\Scripts\Activate.ps1"
+if (Test-Path $VENV_ACTIVATE) {
+    & $VENV_ACTIVATE
+} else {
+    Write-Error "Python virtual environment activation script not found at: $VENV_ACTIVATE"
+    exit 1
+}
+
+# Parse arguments and export as env vars: BOARD, ZEPHYR_VERSION, BUILD_DIR, SOURCE_DIR
+$PARSE_ARGS_SCRIPT = Join-Path $ZEPHYRWW_SCRIPTS "parse_build_args.ps1"
+if (Test-Path $PARSE_ARGS_SCRIPT) {
+    & $PARSE_ARGS_SCRIPT @args
+} else {
+    Write-Error "Parse arguments script not found at: $PARSE_ARGS_SCRIPT"
+    exit 1
+}
+
+# If ZEPHYR_VERSION is latest, then fetch its actual value
+if ($env:ZEPHYR_VERSION -eq "latest") {
+    Write-Host "ZEPHYR_VERSION is set to 'latest'. Retrieving latest version..."
+    $ZEPHYR_VERSION = & python (Join-Path $ZEPHYRWW_HOME "scripts\get_latest_zephyr_version.py")
+    if ([string]::IsNullOrEmpty($ZEPHYR_VERSION)) {
+        Write-Error "Failed to retrieve Zephyr version."
+        exit 1
+    }
+    $env:ZEPHYR_VERSION = $ZEPHYR_VERSION
+    Write-Host "Using latest Zephyr version: $ZEPHYR_VERSION"
+}
+
+# Ensure the zephyr installation for specified version exists
+& python (Join-Path $ZEPHYRWW_HOME "scripts\ensure_zephyr_installation.py") "--zephyr-version=$($env:ZEPHYR_VERSION)"
+
+################################################################################
+# BUILD APP WITH CMAKE
+################################################################################
+
+# Export top level directory paths for Zephyr installation
+$env:ZEPHYR_BASE_DIR = Join-Path $ZEPHYRWW_HOME $env:ZEPHYR_VERSION
+$env:ZEPHYR_DIR = Join-Path $env:ZEPHYR_BASE_DIR "zephyr"
+$env:ZEPHYR_SDK_DIR = Join-Path $env:ZEPHYR_BASE_DIR "zephyr-sdk"
+$env:ZEPHYR_MODULES_BASE = Join-Path $env:ZEPHYR_BASE_DIR "modules"
+$env:BOOTLOADER_BASE = Join-Path $env:ZEPHYR_BASE_DIR "bootloader"
+
+# Set ZEPHYR_MODULES env var for use in cmake
+$ZEPHYR_MODULES_LIST = @(
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\acpica"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\cmsis"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\cmsis-dsp"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\cmsis-nn"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\cmsis_6"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "fs\fatfs"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\adi"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\ambiq"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\atmel"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\bouffalolab"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\espressif"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\ethos_u"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\gigadevice"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\infineon"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\intel"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\microchip"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\nordic"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\nuvoton"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\nxp"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\openisa"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\quicklogic"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\renesas"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\rpi_pico"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\silabs"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\st"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\stm32"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\tdk"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\telink"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\ti"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\wch"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\wurthelektronik"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\xtensa"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\hostap"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\liblc3"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\libmctp"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "hal\libmetal"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "fs\littlefs"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\loramac-node"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\gui\lvgl"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "crypto\mbedtls"),
+    (Join-Path $env:BOOTLOADER_BASE "mcuboot"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "debug\mipi-sys-t"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "bsim_hw_models\nrf_hw_models"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\nrf_wifi"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\open-amp"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\openthread"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "debug\percepio"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\picolibc"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "debug\segger"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "crypto\tinycrypt"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "tee\tf-a\trusted-firmware-a"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "tee\tf-m\trusted-firmware-m"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\uoscore-uedhoc"),
+    (Join-Path $env:ZEPHYR_MODULES_BASE "lib\zcbor")
+)
+
+$ZEPHYR_MODULES_STRING = $ZEPHYR_MODULES_LIST -join ";"
+$env:ZEPHYR_MODULES = $ZEPHYR_MODULES_STRING
+
+# Clean the build directory if it exists
+if (Test-Path $env:BUILD_DIR) {
+    Write-Host "Cleaning existing build directory: $($env:BUILD_DIR)"
+    Remove-Item -Recurse -Force $env:BUILD_DIR
+}
+
+# Run cmake configuration and build
+& cmake -P (Join-Path $env:ZEPHYR_DIR "share\zephyr-package\cmake\zephyr_export.cmake")
+& cmake -P (Join-Path $env:ZEPHYR_SDK_DIR "cmake\zephyr_sdk_export.cmake")
+& cmake "-B$($env:BUILD_DIR)" "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" "-DZEPHYR_MODULES=$($env:ZEPHYR_MODULES)" "-GNinja" "-DBOARD=$($env:BOARD)" $env:SOURCE_DIR
+& cmake --build $env:BUILD_DIR
