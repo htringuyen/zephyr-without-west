@@ -131,4 +131,4 @@ Sample applications can be found in `samples` directory, two recommended samples
 
 - `template`: recommends a project structure that is compatible with Zephyr build system. And also contains explainations and reference links.
 
-- `ledpattern`: a sample application with led and button. It has instructions for building the app with zephyrww.
+- `ledpattern`: a sample application with leds and buttons. It can be built immediately using `zephyrwwb` for `ek_ra8m1` and `nrf52840dk/nrf52840` boars.
