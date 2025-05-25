@@ -48,6 +48,14 @@ __Run a single command to build__
 # This will be built into project-root/builds/ra_ek8m1
 zeyphyrwwb -b ek_ra8m1 -z v4.1.0 /path/to/project/root
 ```
+
+## Sample applications
+Sample applications can be found in `samples` directory, two recommended samples to look at for getting started with Zephyr:
+
+- `template`: recommends a project structure that is compatible with Zephyr build system. And also contains explainations and reference links.
+
+- `ledpattern`: a sample application with leds and buttons. It can be built immediately using `zephyrwwb` for `ek_ra8m1` and `nrf52840dk/nrf52840` boars.
+
 ## Installation
 
 ### Ubuntu
@@ -124,11 +132,3 @@ Add the Zephyrww's bin directory to `PATH`
 # Default installation dir is $USERPROFILE\.zephyrww
 $env:PATH = "$env:\path\to\zephyrww\install\dir;$env:PATH"
 ```
-
-
-## Sample applications
-Sample applications can be found in `samples` directory, two recommended samples to look at for getting started with Zephyr:
-
-- `template`: recommends a project structure that is compatible with Zephyr build system. And also contains explainations and reference links.
-
-- `ledpattern`: a sample application with leds and buttons. It can be built immediately using `zephyrwwb` for `ek_ra8m1` and `nrf52840dk/nrf52840` boars.
