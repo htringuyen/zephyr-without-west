@@ -48,16 +48,21 @@ function Parse-Args {
                     exit 1
                 }
             }
-            { $_ -eq "-h" -or $_ -eq "--help" } {
+            "-h" {
                 Show-Usage
                 exit 0
             }
-            { $_.StartsWith("-") } {
-                Write-Host "Error: Unknown option $_" -ForegroundColor Red
+            "--help" {
                 Show-Usage
-                exit 1
+                exit 0
             }
             default {
+                # Check if it's an unknown option (starts with -)
+                if ($Arguments[$i].StartsWith("-")) {
+                    Write-Host "Error: Unknown option $($Arguments[$i])" -ForegroundColor Red
+                    Show-Usage
+                    exit 1
+                }
                 # This should be the source directory (last positional argument)
                 if ([string]::IsNullOrEmpty($source_dir)) {
                     $source_dir = $Arguments[$i]
