@@ -3,7 +3,7 @@
 A CLI tool that build zephyr applications without using west.
 
 ## Usage
-### Command line options
+### Build options
 <pre>
 Usage: zephyrwwb -b &lt;board&gt; [-z &lt;zephyr-version&gt;] [-d &lt;build-dir&gt;] &lt;source-dir&gt;
 
@@ -20,21 +20,34 @@ Examples:
   zephyrwwb -z v1.0.1 -b nrf52840dk/nrf52840 .
 </pre>
 
-### Required entry point cmake
+### Example usage
 This tool requires a cmake file in root of the application project as an entry point to Zephyr build system. And that is all, the application should be built without issues as long as its codes done right and no special customization to Zephyr build system needed.
+
+__Built project has a CMakeList.txt at its root__
+
+The function `find_package()` is the entry point to Zephyr build system. The enviroment variable `ZEPHYR_ENTRY_POINT` will be set automatically by this tool based on the specified zephyr version in build command.
 
 ```cmake
 # CMakeList.txt
 
 cmake_minimum_required(VERSION 3.20.0)
 
-# required cmake call
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_DIR})
+find_package(Zephyr REQUIRED
+    PATHS $ENV{ZEPHYR_ENTRY_POINT}
+    NO_DEFAULT_PATH
+)
 
-project(template-app)
+project(ledpattern)
 target_sources(app PRIVATE src/main.c)
 ```
 
+__Run a single command to build__
+
+```bash
+# For example, build for EK RA8M1 with zephyr version 4.1.0.
+# This will be built into project-root/builds/ra_ek8m1
+zeyphyrwwb -b ek_ra8m1 -z v4.1.0 /path/to/project/root
+```
 ## Installation
 
 ### Ubuntu
@@ -64,18 +77,54 @@ In root of this repo,
 or
 
 ```bash
-# you can explicitly specify an installation directory
+# explicitly specify an installation directory
 ./install.sh -d <path/to/installation/dir>
 ```
 
 #### Post configuration
 
-Add the Zephyrww bin directory to `PATH`
+Add the Zephyrww's bin directory to `PATH`
+
 ```bash
 # .bashrc
-export ZEPHYRWW_HOME="$HOME/.zephyrww"
-export PATH="$ZEPHYRWW_HOME/bin:$PATH"
+# Default zephyrww installation dir is $HOME/.zephyrww 
+export PATH="/path/to/zephyrww/install/dir:$PATH"
 ```
+
+### Windows
+
+#### Prerequisite
+
+Common tools are required such as cmake, git, device-tree-compiler, etc. All of them can be install with the below command:
+
+```powershell
+winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf python Git.Git oss-winget.dtc wget 7zip.7zip
+```
+#### Installing
+
+In root of this repo,
+
+```powershell
+# this will install zephyrww to $HOME/.zephyrww
+./install.ps1
+```
+
+or
+
+```powershell
+# explicitly specify an installation directory
+./install.ps1 -d <path/to/installation/dir>
+```
+
+#### Post configuration
+
+Add the Zephyrww's bin directory to `PATH`
+
+```powershell
+# Default installation dir is $USERPROFILE\.zephyrww
+$env:PATH = "$env:\path\to\zephyrww\install\dir;$env:PATH"
+```
+
 
 ## Sample applications
 Sample applications can be found in `samples` directory, two recommended samples to look at for getting started with Zephyr:
