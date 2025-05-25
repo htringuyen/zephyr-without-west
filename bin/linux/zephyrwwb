@@ -58,14 +58,14 @@ python $ZEPHYRWW_HOME/scripts/ensure_zephyr_installation.py --zephyr-version=$ZE
 ################################################################################
 
 # Export top level directory paths for Zephyr installation
-export ZEPHYR_BASE_DIR="${ZEPHYRWW_HOME}/${ZEPHYR_VERSION}"
-export ZEPHYR_DIR="${ZEPHYR_BASE_DIR}/zephyr"
-export ZEPHYR_SDK_DIR="${ZEPHYR_BASE_DIR}/zephyr-sdk"
-export ZEPHYR_MODULES_BASE="${ZEPHYR_BASE_DIR}/modules"
-export BOOTLOADER_BASE="${ZEPHYR_BASE_DIR}/bootloader"
+ZEPHYR_BASE_DIR="${ZEPHYRWW_HOME}/${ZEPHYR_VERSION}"
+ZEPHYR_DIR="${ZEPHYR_BASE_DIR}/zephyr"
+ZEPHYR_SDK_DIR="${ZEPHYR_BASE_DIR}/zephyr-sdk"
+ZEPHYR_MODULES_BASE="${ZEPHYR_BASE_DIR}/modules"
+BOOTLOADER_BASE="${ZEPHYR_BASE_DIR}/bootloader"
 
 # Set ZEPHYR_MODULES env var for use in cmake
-export ZEPHYR_MODULES_LIST=(
+ZEPHYR_MODULES_LIST=(
     "${ZEPHYR_MODULES_BASE}/lib/acpica"
     "${ZEPHYR_MODULES_BASE}/hal/cmsis"
     "${ZEPHYR_MODULES_BASE}/lib/cmsis-dsp"
@@ -122,7 +122,7 @@ export ZEPHYR_MODULES_LIST=(
     "${ZEPHYR_MODULES_BASE}/lib/zcbor"
 )
 
-export ZEPHYR_MODULES_STRING=""
+ZEPHYR_MODULES_STRING=""
 for module in "${ZEPHYR_MODULES_LIST[@]}"; do
     if [ -z "$ZEPHYR_MODULES_STRING" ]; then
         ZEPHYR_MODULES_STRING="$module"
@@ -138,8 +138,11 @@ if [ -d "$BUILD_DIR" ]; then
   rm -rf "$BUILD_DIR"
 fi
 
+export ZEPHYR_ENTRY_POINT="$ZEPHYR_DIR/share/zephyr-package/cmake"
+export ZEPHYR_SDK_INSTALL_DIR="$ZEPHYR_SDK_DIR"
 # Run cmake configuration and build
-cmake -P "$ZEPHYR_DIR/share/zephyr-package/cmake/zephyr_export.cmake"
-cmake -P "$ZEPHYR_SDK_DIR/cmake/zephyr_sdk_export.cmake"
-cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DZEPHYR_MODULES="$ZEPHYR_MODULES" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
+#cmake -P "$ZEPHYR_DIR/share/zephyr-package/cmake/zephyr_export.cmake"
+#cmake -P "$ZEPHYR_SDK_DIR/cmake/zephyr_sdk_export.cmake"
+cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DZEPHYR_MODULES="$ZEPHYR_MODULES" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
 cmake --build "$BUILD_DIR"
