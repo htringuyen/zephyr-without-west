@@ -1,6 +1,6 @@
 mach create
-$repl ?= @/data/zephyr-without-west/samples/ledpattern/renode/platforms/ek_ra8m1.repl
+$repl ?= @/ledpattern/renode/platforms/ek_ra8m1.repl
 machine LoadPlatformDescription $repl
 showAnalyzer sysbus.uart9
-$bin ?= @/data/zephyr-without-west/samples/ledpattern/builds/ek_ra8m1/zephyr/zephyr.elf
+$bin ?= @/ledpattern/builds/ek_ra8m1/zephyr/zephyr.elf
 sysbus LoadELF $bin

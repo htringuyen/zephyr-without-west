@@ -20,25 +20,28 @@ zephyr -b nrf52840dk/nrf52840 .
 
 Starting with Renode's [git repo](https://github.com/renode/renode) to learn Renode.
 
-This sample contains Renode simulation scripts (.resc) to test if the result build is
-executable. You can refer those scripts and adjust the paths corresponding to your specific environment. 
-You can run the these scripts with Renode installed in your local machine or using Renode in docker.
+This sample contains Renode simulation scripts (.resc) (in `renode` directory) to test if the resulting build is executable.
 
-__Run the resc scripts in docker__
+__Run the .resc scripts in docker__
 
-This repo also contains docker compose file for convenient. You can start the simulation with a single command as follows, at the `renode` directory of this sample,
+This repo also contains docker compose file for convenient. 
+You can start the simulation with a single command without any change, given that you have docker installed and the host machine is linux based. 
 
 ```bash
-docker compose run --rm renode renode -e 'start @/data/zephyr-without-west/samples/ledpattern/renode/ek_ra8m1.resc'
+# change dir to the renode directory of ledpattern sample
+cd /path-to-zephyr-without-west/samples/ledpattern/renode
+
+docker compose run --rm renode renode -e 'start @/ledpattern/renode/ek_ra8m1.resc'
 ```
 
 __Run the resc scripts in host OS__
 
-You can install Renode directly in your OS. After that you can easily use the `renode` command to execute the script, such as the following example in ubuntu:
+You can also run Renode simulation in your host machine with Renode installed, in this case, you should read the scripts and ensure every paths in them being correct. 
 ```bash
-# check if renoded installed
+# check if renode installed
 renode --version
 
+# after ensuring paths in the resc scripts being correct,
 # run simulation script
 renode -e 'start @/path/to/your/resc'
 ```

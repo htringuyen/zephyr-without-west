@@ -8,5 +8,5 @@ services:
       - DISPLAY=${DISPLAY}
     volumes:
       - $XAUTHORITY:/home/developer/.Xauthority
-      - ~/embeddedc:/data
+      - ../:/ledpattern
     network_mode: host
