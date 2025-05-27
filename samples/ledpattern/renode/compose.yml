@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  renode:
+    image: antmicro/renode:1.15.3
+    container_name: renode
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - $XAUTHORITY:/home/developer/.Xauthority
+      - ~/embeddedc:/data
+    network_mode: host

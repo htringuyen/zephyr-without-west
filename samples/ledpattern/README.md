@@ -16,6 +16,35 @@ zephyrwwb -b ek_ra8m1 -z=v4.1.0 .
 zephyr -b nrf52840dk/nrf52840 .
 ```
 
+## Test if the build is executable with Renode
+
+Starting with Renode's [git repo](https://github.com/renode/renode) to learn Renode.
+
+This sample contains Renode simulation scripts (.resc) to test if the result build is
+executable. You can refer those scripts and adjust the paths corresponding to your specific environment. 
+You can run the these scripts with Renode installed in your local machine or using Renode in docker.
+
+__Run the resc scripts in docker__
+
+This repo also contains docker compose file for convenient. You can start the simulation with a single command as follows, at the `renode` directory of this sample,
+
+```bash
+docker compose run --rm renode renode -e 'start @/data/zephyr-without-west/samples/ledpattern/renode/ek_ra8m1.resc'
+```
+
+__Run the resc scripts in host OS__
+
+You can install Renode directly in your OS. After that you can easily use the `renode` command to execute the script, such as the following example in ubuntu:
+```bash
+# check if renoded installed
+renode --version
+
+# run simulation script
+renode -e 'start @/path/to/your/resc'
+```
+
+
+
 ## Example build logs for EK RA8M1 in Windows
 ```bash
 PS C:\Users\tri.nguyen-huu2\embeddedc\zephyr-without-west\samples\ledpattern> zephyrwwb -b ek_ra8m1 .

@@ -1,5 +1,5 @@
 mach create
 machine LoadPlatformDescription @platforms/boards/nrf52840dk_nrf52840.repl
 showAnalyzer sysbus.uart0
-$bin ?= @/data/zephyr-without-west/samples/ledpattern/builds/nrf52840dk/zephyr/zephyr.elf
+$bin ?= @/data/zephyr-without-west/samples/ledpattern/builds/nrf52840dk_nrf52840/zephyr/zephyr.elf
 sysbus LoadELF $bin
