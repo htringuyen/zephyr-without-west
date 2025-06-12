@@ -5,7 +5,7 @@ import json
 def get_latest_zephyr_version() -> str:
     try:
         # GitHub API endpoint for Zephyr releases
-        url = "https://api.github.com/repos/zephyrproject-rtos/zephyr/releases/latest"
+        url = "https://api.github.com/repos/htringuyen/zephyr/releases/latest"
                 
         # Create request with user agent (GitHub API requires it)
         req = urllib.request.Request(url)

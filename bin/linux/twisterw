@@ -5,6 +5,25 @@
 set -e
 
 ################################################################################
+# Parse arguments to check if this is unit test
+################################################################################
+# Initialize variables
+IS_UNIT_TEST=false
+TEST_ARGS=()
+
+# Check if first argument is --ut
+if [[ $1 == "--ut" ]]; then
+    IS_UNIT_TEST=true
+    shift # Remove --ut from arguments
+fi
+
+# Collect all remaining arguments as test arguments
+TEST_ARGS=("$@")
+
+echo "IS_UNIT_TEST: $IS_UNIT_TEST"
+echo "TEST_ARGS: $TEST_ARGS"
+
+################################################################################
 # CLEANUP CMAKE CACHE
 ################################################################################
 if [ -d "$HOME/.cmake/packages/Zephyr" ]; then
@@ -18,6 +37,10 @@ fi
 ################################################################################
 # SETUP ENVIROMENT AND ZEPHYR DEPENDENCIES
 ################################################################################
+
+if [ -z "${ZEPHYR_VERSION}" ]; then
+  ZEPHYR_VERSION="latest"
+fi
 
 # Setup top level directories: ZEPHYRWW_HOME, ZEPHYRWW_SCRIPTS
 if [ -z "$ZEPHYRWW_HOME" ]; then
@@ -37,7 +60,7 @@ export ZEPHYRWW_HOME=$ZEPHYRWW_HOME # for used in python scripts
 source $ZEPHYRWW_HOME/.venv/bin/activate 
 
 # Parse arguments and export as env vars: BOARD, ZEPHYR_VERSION, BUILD_DIR, SOURCE_DIR
-source $ZEPHYRWW_SCRIPTS/parse_build_args.sh "$@"
+# source $ZEPHYRWW_SCRIPTS/parse_build_args.sh "$@"
 
 # If ZEPHYR_VERSION is latest, then fetch its actuall value
 if [ "$ZEPHYR_VERSION" = "latest" ]; then
@@ -53,8 +76,18 @@ fi
 # Ensure the zephyr installation for specified version exists
 python $ZEPHYRWW_HOME/scripts/ensure_zephyr_installation.py --zephyr-version=$ZEPHYR_VERSION
 
+
 ################################################################################
-# BUILD APP WITH CMAKE
+# Install ztest-build-ext if not exists
+################################################################################
+UT_MODULE_DIR=$ZEPHYRWW_HOME/ztest-build-ext
+if [ ! -d "$UT_MODULE_DIR" ]; then
+  echo "ztest-build-ext module not found. Cloning it." >&2
+  git clone https://github.com/htringuyen/ztest-build-ext.git $ZEPHYRWW_HOME/ztest-build-ext
+fi
+
+################################################################################
+# SETUP for twister
 ################################################################################
 
 # Export top level directory paths for Zephyr installation
@@ -66,6 +99,7 @@ BOOTLOADER_BASE="${ZEPHYR_INSTALLATION_DIR}/bootloader"
 
 # Set ZEPHYR_MODULES env var for use in cmake
 ZEPHYR_MODULES_LIST=(
+    "$ZEPHYRWW_HOME/ztest-build-ext"
     "${ZEPHYR_MODULES_BASE}/lib/acpica"
     "${ZEPHYR_MODULES_BASE}/hal/cmsis"
     "${ZEPHYR_MODULES_BASE}/lib/cmsis-dsp"
@@ -131,7 +165,6 @@ for module in "${ZEPHYR_MODULES_LIST[@]}"; do
     fi
 done
 export ZEPHYR_MODULES="$ZEPHYR_MODULES_STRING"
-export ZEPHYR_BASE="$ZEPHYR_INSTALLATION_DIR/zephyr"
 
 # Clean the build directory if it exists
 if [ -d "$BUILD_DIR" ]; then
@@ -143,9 +176,24 @@ export ZEPHYR_ENTRY_POINT="$ZEPHYR_DIR/share/zephyr-package/cmake"
 export ZEPHYR_SDK_INSTALL_DIR="$ZEPHYR_SDK_DIR"
 export ZEPHYR_BASE="$ZEPHYR_INSTALLATION_DIR/zephyr"
 
-# Run cmake configuration and build
-#cmake -P "$ZEPHYR_DIR/share/zephyr-package/cmake/zephyr_export.cmake"
-#cmake -P "$ZEPHYR_SDK_DIR/cmake/zephyr_sdk_export.cmake"
-cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DZEPHYR_MODULES="$ZEPHYR_MODULES" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
-cmake --build "$BUILD_DIR"
+# Usage: source check_venv.sh [venv_path]
+VENV_PATH="$HOME/.zephyrww/.venv"
+
+if [[ -z "$VIRTUAL_ENV" || "$VIRTUAL_ENV" != "$VENV_PATH" ]]; then
+    if [[ -f "$VENV_PATH/bin/activate" ]]; then
+        [[ -n "$VIRTUAL_ENV" ]] && deactivate
+        source "$VENV_PATH/bin/activate"
+    else
+        echo "Error: $VENV_PATH is not a valid virtual environment."
+        return 1
+    fi
+fi
+
+if [ "$IS_UNIT_TEST" = true ]; then
+    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" -A "$UT_MODULE_DIR/boards"  "${TEST_ARGS[@]}"
+else
+    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" "${TEST_ARGS[@]}"
+fi
+
+
+

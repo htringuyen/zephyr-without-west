@@ -26,7 +26,7 @@ def run_zephyr_install(zephyr_home, version, zephyr_sdk, west_conf):
         print("Initializing west workspace...")
         subprocess.run([
             "west", "init", "-m", 
-            "https://github.com/zephyrproject-rtos/zephyr", 
+            "https://github.com/htringuyen/zephyr.git", 
             "--mr", version, "."
         ], check=True)
         
