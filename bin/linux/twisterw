@@ -175,7 +175,7 @@ fi
 export ZEPHYR_ENTRY_POINT="$ZEPHYR_DIR/share/zephyr-package/cmake"
 export ZEPHYR_SDK_INSTALL_DIR="$ZEPHYR_SDK_DIR"
 export ZEPHYR_BASE="$ZEPHYR_INSTALLATION_DIR/zephyr"
-export UT_MODULE_DIR="$UT_MODULE_DIR"
+#export UT_MODULE_DIR="$UT_MODULE_DIR"
 
 # Usage: source check_venv.sh [venv_path]
 VENV_PATH="$HOME/.zephyrww/.venv"
@@ -191,7 +191,7 @@ if [[ -z "$VIRTUAL_ENV" || "$VIRTUAL_ENV" != "$VENV_PATH" ]]; then
 fi
 
 if [ "$IS_UNIT_TEST" = true ]; then
-    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" -A "$UT_MODULE_DIR/boards"  "${TEST_ARGS[@]}"
+    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" -x "UT_MODULE_DIR=$UT_MODULE_DIR" -A "$UT_MODULE_DIR/boards"  "${TEST_ARGS[@]}"
 else
     "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" "${TEST_ARGS[@]}"
 fi
