@@ -99,7 +99,7 @@ BOOTLOADER_BASE="${ZEPHYR_INSTALLATION_DIR}/bootloader"
 
 # Set ZEPHYR_MODULES env var for use in cmake
 ZEPHYR_MODULES_LIST=(
-    "$ZEPHYRWW_HOME/ztest-build-ext"
+    #"$ZEPHYRWW_HOME/ztest-build-ext"
     "${ZEPHYR_MODULES_BASE}/lib/acpica"
     "${ZEPHYR_MODULES_BASE}/hal/cmsis"
     "${ZEPHYR_MODULES_BASE}/lib/cmsis-dsp"
@@ -175,6 +175,7 @@ fi
 export ZEPHYR_ENTRY_POINT="$ZEPHYR_DIR/share/zephyr-package/cmake"
 export ZEPHYR_SDK_INSTALL_DIR="$ZEPHYR_SDK_DIR"
 export ZEPHYR_BASE="$ZEPHYR_INSTALLATION_DIR/zephyr"
+export UT_MODULE_DIR="$UT_MODULE_DIR"
 
 # Usage: source check_venv.sh [venv_path]
 VENV_PATH="$HOME/.zephyrww/.venv"
