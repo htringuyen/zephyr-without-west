@@ -54,6 +54,15 @@ fi
 python $ZEPHYRWW_HOME/scripts/ensure_zephyr_installation.py --zephyr-version=$ZEPHYR_VERSION
 
 ################################################################################
+# Install ztest-build-ext if not exists
+################################################################################
+UT_MODULE_DIR=$ZEPHYRWW_HOME/ztest-build-ext
+if [ ! -d "$UT_MODULE_DIR" ]; then
+  echo "ztest-build-ext module not found. Cloning it." >&2
+  git clone https://github.com/htringuyen/ztest-build-ext.git $ZEPHYRWW_HOME/ztest-build-ext
+fi
+
+################################################################################
 # BUILD APP WITH CMAKE
 ################################################################################
 
@@ -147,5 +156,5 @@ export ZEPHYR_BASE="$ZEPHYR_INSTALLATION_DIR/zephyr"
 #cmake -P "$ZEPHYR_DIR/share/zephyr-package/cmake/zephyr_export.cmake"
 #cmake -P "$ZEPHYR_SDK_DIR/cmake/zephyr_sdk_export.cmake"
 cmake -B"$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DZEPHYR_MODULES="$ZEPHYR_MODULES" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
+    -DZEPHYR_MODULES="$ZEPHYR_MODULES" -DCMAKE_MODULE_PATH="$UT_MODULE_DIR/cmake/share" -GNinja -DBOARD="$BOARD" "$SOURCE_DIR"
 cmake --build "$BUILD_DIR"

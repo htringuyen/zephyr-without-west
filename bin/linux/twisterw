@@ -191,10 +191,7 @@ if [[ -z "$VIRTUAL_ENV" || "$VIRTUAL_ENV" != "$VENV_PATH" ]]; then
 fi
 
 if [ "$IS_UNIT_TEST" = true ]; then
-    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" -x "UT_MODULE_DIR=$UT_MODULE_DIR" -A "$UT_MODULE_DIR/boards"  "${TEST_ARGS[@]}"
+    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "CMAKE_MODULE_PATH=$UT_MODULE_DIR/cmake/share" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" -x "UT_MODULE_DIR=$UT_MODULE_DIR" -A "$UT_MODULE_DIR/boards"  "${TEST_ARGS[@]}"
 else
-    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" "${TEST_ARGS[@]}"
+    "${ZEPHYR_INSTALLATION_DIR}/zephyr/scripts/twister" -x "CMAKE_MODULE_PATH=$UT_MODULE_DIR/cmake/share" -x "ZEPHYR_MODULES=$ZEPHYR_MODULES" "${TEST_ARGS[@]}"
 fi
-
-
-
