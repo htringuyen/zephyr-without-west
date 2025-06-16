@@ -3,7 +3,7 @@
 A CLI tool that build zephyr applications without using west.
 
 ## Usage
-### Build options
+### zephyrwwb: build regular zephyr app
 <pre>
 Usage: zephyrwwb -b &lt;board&gt; [-z &lt;zephyr-version&gt;] [-d &lt;build-dir&gt;] &lt;source-dir&gt;
 
@@ -11,7 +11,7 @@ Arguments:
   -b &lt;board&gt;              Board name (required)
   -z &lt;zephyr-version&gt;     Zephyr version (optional, default: latest)
   -d &lt;build-dir&gt;          Build directory (optional, default: builds/&lt;board&gt;)
-  -h, --help              Show this help message
+  -h, --help                    Show this help message
   &lt;source-dir&gt;            Source directory (required)
 
 Examples:
@@ -19,6 +19,18 @@ Examples:
   zephyrwwb -b esp32 -z v3.4.0 -d custom-build ./src
   zephyrwwb -z v1.0.1 -b nrf52840dk/nrf52840 .
 </pre>
+
+### twisterw: build and run compact unit test, as well as regular integration test
+This tool incorporates Zephyr's [twister](https://github.com/htringuyen/zephyr/tree/main/scripts/pylib/twister) and [ztest-build-ext](https://github.com/htringuyen/ztest-build-ext), and a downstream [fork of Zephyr](https://github.com/htringuyen/zephyr). It keep all features from twister but with enhancement in unit test and module loading.
+<pre>
+Usage: twisterw [--ut] @regular-twister-arguments
+
+Arguments:
+  --ut                          Build and run unit test using ztest-build-ext, this help reduce build time and ease dependency inclusions
+  @regular-twister-arguments    This argument will be thrown back to twister, so it is the same as when you use twister
+  --help                        Get help message from twister, use as reference to construct @regular-twister-arguments
+</pre>
+
 
 ### Example usage
 This tool requires a cmake file in root of the application project as an entry point to Zephyr build system. And that is all, the application should be built without issues as long as its codes done right and no special customization to Zephyr build system needed.
