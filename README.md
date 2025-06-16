@@ -32,7 +32,7 @@ Arguments:
 </pre>
 
 
-### Example usage
+### Example usages for `zephyrwwb`
 This tool requires a cmake file in root of the application project as an entry point to Zephyr build system. And that is all, the application should be built without issues as long as its codes done right and no special customization to Zephyr build system needed.
 
 __Built project has a CMakeList.txt at its root__
@@ -44,12 +44,9 @@ The function `find_package()` is the entry point to Zephyr build system. The env
 
 cmake_minimum_required(VERSION 3.20.0)
 
-find_package(Zephyr REQUIRED
-    PATHS $ENV{ZEPHYR_ENTRY_POINT}
-    NO_DEFAULT_PATH
-)
+find_package(Zephyr REQUIRED $ENV{ZEPHYR_BASE})
 
-project(ledpattern)
+project(zephyr_app)
 target_sources(app PRIVATE src/main.c)
 ```
 
@@ -58,8 +55,17 @@ __Run a single command to build__
 ```bash
 # For example, build for EK RA8M1 with zephyr version 4.1.0.
 # This will be built into project-root/builds/ra_ek8m1
-zeyphyrwwb -b ek_ra8m1 -z v4.1.0 /path/to/project/root
+zeyphyrwwb -b ek_ra8m1 -z v4.1.0_m1 /path/to/project/root
 ```
+
+### Example usages for `twisterw`
+Please view test applications in [ztest-build-ext/tests](https://github.com/htringuyen/ztest-build-ext/tree/main/tests) for the usage examples. 
+
+The naming conventions of the test application is as follows: [app_id]-[app_name]\_[testing_type]\_[testing_way]. Where:
+- `app_id`: e.g. 01, 02, etc. Apps with the same id share the same logic (usually the same source)
+- `app_name`: descriptive name of the app, apps with the same id have the same `app_name`
+- `testing_type`: `ut` for unit test or `it` for integration test
+- `testing_way`: `ext` if using `ztest-build-ext`, `def` if using default twiter build and run way.
 
 ## Sample applications
 Sample applications can be found in `samples` directory, two recommended samples to look at for getting started with Zephyr:
